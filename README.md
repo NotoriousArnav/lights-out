@@ -78,6 +78,9 @@ the same rules and splits them into a pure engine plus a React view:
   supports keyboard play.
 - `prefers-reduced-motion` drops the press transform and glow transitions.
 - `touch-action: manipulation` on tiles avoids double-tap zoom.
+- A light/dark toggle in the top-left overrides the system palette and
+  remembers the choice in `localStorage['lo-theme']`. A tiny head script
+  applies the saved theme before first paint, so there is no flash.
 
 ## Parity tests
 
@@ -101,10 +104,11 @@ src/
   routes/sign-in.$.tsx  themed Clerk sign-in (and its sub-steps)
   routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
   components/           Board, Tile, SizePicker, StatBar, Controls, Message,
-                        AccountChip, AuthShell
+                        AccountChip, AuthShell, ThemeToggle
   game/                 engine, scramble, RNG, types (no DOM, no React)
   hooks/useGame.ts      game state, scoring, hint timer, localStorage bests
   lib/clerk.ts          key detection plus the shared Clerk appearance
+  lib/theme.ts          theme resolution, storage key, pre-paint init script
   start.ts              CSRF middleware, plus Clerk middleware when configured
   styles.css            the original stylesheet, ported
 tests/                  engine and parity suites
