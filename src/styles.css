@@ -8,6 +8,7 @@
   --glow: rgba(245, 166, 35, 0.55);
   --accent: #2f5bea;
   --hint: #2f5bea;
+  --danger: #c0392b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +22,7 @@
     --glow: rgba(255, 193, 77, 0.5);
     --accent: #7c9bff;
     --hint: #7c9bff;
+    --danger: #ff9b9b;
   }
 }
 
@@ -34,6 +36,7 @@
   --glow: rgba(255, 193, 77, 0.5);
   --accent: #7c9bff;
   --hint: #7c9bff;
+  --danger: #ff9b9b;
 }
 
 * {
@@ -66,9 +69,15 @@ body {
   }
 }
 
+.layout {
+  width: 100%;
+  max-width: 780px;
+}
+
 .app {
   width: 100%;
   max-width: 420px;
+  margin-inline: auto;
   padding: 16px;
   text-align: center;
 }
@@ -299,4 +308,298 @@ button:focus-visible {
 .auth__notice {
   margin: 0;
   color: var(--muted);
+}
+
+.bar button:disabled,
+.scores button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.save-status {
+  margin: -4px 0 0;
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.save-status a {
+  color: var(--accent);
+}
+
+.save-status--ok {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.save-status--error {
+  color: var(--danger);
+}
+
+/* -------------------------------------------------------------------------
+   Global high scores
+   ---------------------------------------------------------------------- */
+
+.scores-aside {
+  display: none;
+}
+
+.scores {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  text-align: left;
+}
+
+.scores__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scores__head > div {
+  min-width: 0;
+}
+
+.scores__refresh {
+  flex: none;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.scores__head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.scores__head p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.scores__tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.scores__tabs button {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.scores__tabs button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.scores__list-wrap {
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.scores__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.score-row--me {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.score-row--top .score-row__place {
+  color: var(--on);
+}
+
+.score-row__place {
+  color: var(--muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.score-row__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.score-row__name {
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-row__meta {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.score-row__score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scores__empty {
+  margin: 0;
+  padding: 20px 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.scores__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scores__skeleton span {
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--bg), var(--off), var(--bg));
+  background-size: 200% 100%;
+  animation: scores-shimmer 1.2s linear infinite;
+}
+
+@keyframes scores-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.scores__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.scores__foot button {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.scores__cta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.scores__cta a {
+  color: var(--accent);
+}
+
+.scores-dialog {
+  width: min(92vw, 420px);
+  max-width: none;
+  max-height: 90dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.scores-dialog::backdrop {
+  background: rgba(3, 6, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.scores-dialog__panel {
+  position: relative;
+}
+
+.scores-dialog__panel .scores {
+  max-height: 88dvh;
+  padding: 18px;
+}
+
+.scores-dialog__panel .scores__list-wrap {
+  max-height: 55dvh;
+}
+
+.scores-dialog__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scores__skeleton span {
+    animation: none;
+  }
+}
+
+/* Large landscape screens show the ranking beside the board; everything
+   smaller gets the Scores button and the modal. CSS, not JS, so the server
+   and client always render the same layout. */
+@media (orientation: landscape) and (min-width: 1024px) {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(280px, 340px);
+    gap: 20px;
+    align-items: start;
+    justify-content: center;
+  }
+
+  .layout .app {
+    margin: 0;
+  }
+
+  .scores-aside {
+    position: sticky;
+    top: 16px;
+    display: block;
+  }
+
+  .scores-open {
+    display: none;
+  }
 }

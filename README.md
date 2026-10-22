@@ -3,17 +3,24 @@
 The classic Lights Out puzzle, ported from a single HTML file to React 19 +
 TanStack Start, with the original game's behavior preserved press for press.
 
-Tap a tile to flip it and its neighbours. Turn every light off. Fewer moves is
-a better score.
+Tap a tile to flip it and its neighbours. Turn every light off. Fewer moves,
+fewer hints, and less time make a better score.
+
+## Credits
+
+- **Rahul Chakraborty** — developer of the original, single-file legacy game.
+- **Arnav Ghosh** — ported the game to React + TanStack Start, added the
+  server-verified leaderboard, and deployed it.
 
 ## Getting started
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # engine unit tests + parity suite against the original HTML
+npm test         # engine, token, score, database and parity suites
 npm run build    # production build
 npm run typecheck
+npm run db:generate  # regenerate SQLite migrations after a schema change
 ```
 
 ## Accounts
@@ -31,34 +38,54 @@ The app is wired for Google, GitHub, Discord, and Spotify. Clerk's development
 instance supplies shared OAuth credentials for Google, GitHub, and Discord, so
 those work without setting anything up. **Spotify requires your own OAuth
 client** (Client ID and Secret from the Spotify developer dashboard), added in
-Clerk under *SSO connections → Spotify*; it then appears on the sign-in screen
+Clerk under _SSO connections → Spotify_; it then appears on the sign-in screen
 automatically. Enabling it in code is deliberately not a separate flag — Clerk
 renders whichever providers the instance has enabled.
 
 Routes:
 
-| Route | Purpose |
-| --- | --- |
+| Route        | Purpose                   |
+| ------------ | ------------------------- |
 | `/sign-in/*` | themed Clerk `<SignIn />` |
 | `/sign-up/*` | themed Clerk `<SignUp />` |
 
 The fixed corner chip on the game page shows **Sign in** for guests and the
-Clerk user button for signed-in players. Account state currently only proves
-identity; score sync and the leaderboard land with the Postgres work below.
+Clerk user button for signed-in players. Signing in is required to post a score
+to the global leaderboard; guests can still play and browse the rankings.
+
+## High scores
+
+The leaderboard is global and split by board size (3×3, 4×4 and 5×5). Every
+verified run is stored, but the list shows each player's best run per size,
+ranked by score, then moves, hints and time. The score is:
+
+```text
+max(0, 10_000 − 50 × moves − 200 × hints − 5 × seconds)
+```
+
+The clock starts on the first move, not when the puzzle is generated. Moves and
+hints are verified server-side by replaying a signed game token from its seed;
+the finish time is measured from the server's first-move timestamp. Hints mint a
+new token with one more hint charged, and each token carries a unique id so the
+same run cannot be submitted twice.
+
+The sidebar shows the ranking beside the board on large landscape screens;
+smaller screens get a **Scores** button and a modal. A Refresh button, window
+focus, and a successful save all pull the latest rows.
 
 ## What is ported
 
 The original was one 115-line file with all state in a closure. The port keeps
 the same rules and splits them into a pure engine plus a React view:
 
-| Original | Port |
-| --- | --- |
-| `flip(i)` | `src/game/engine.ts` — immutable, returns new grid + solution set |
-| `newGame()` scramble | `src/game/scramble.ts` — same `n²×2` presses, same retry |
-| `sol` Set | `Puzzle.solution` — same insertion order, same `delete`/`add` semantics |
-| Hint | `hintTile()` — first element of the remaining solution, 1800 ms outline |
-| `bests` in `localStorage['lo-best']` | `src/hooks/useGame.ts` — same key, same format |
-| DOM built by hand | `src/components/*` — same markup, classes and CSS |
+| Original                             | Port                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| `flip(i)`                            | `src/game/engine.ts` — immutable, returns new grid + solution set       |
+| `newGame()` scramble                 | `src/game/scramble.ts` — same `n²×2` presses, same retry                |
+| `sol` Set                            | `Puzzle.solution` — same insertion order, same `delete`/`add` semantics |
+| Hint                                 | `hintTile()` — first element of the remaining solution, 1800 ms outline |
+| `bests` in `localStorage['lo-best']` | `src/hooks/useGame.ts` — same key, same format                          |
+| DOM built by hand                    | `src/components/*` — same markup, classes and CSS                       |
 
 ### Deliberately preserved quirks
 
@@ -99,25 +126,42 @@ Run it with `npm test`.
 
 ```
 src/
-  routes/index.tsx      game page; the loader supplies the puzzle seed
+  routes/index.tsx      game page; the loader issues a signed puzzle token
   routes/__root.tsx     document shell, metadata, conditional ClerkProvider
   routes/sign-in.$.tsx  themed Clerk sign-in (and its sub-steps)
   routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
   components/           Board, Tile, SizePicker, StatBar, Controls, Message,
-                        AccountChip, AuthShell, ThemeToggle
+                        AccountChip, AuthShell, ThemeToggle, HighScores,
+                        ScoresDialog, SaveStatus
   game/                 engine, scramble, RNG, types (no DOM, no React)
-  hooks/useGame.ts      game state, scoring, hint timer, localStorage bests
+  hooks/useGame.ts      game state, first-move clock, hints, bests, submit
+  hooks/useLeaderboard.ts  paged, refreshable leaderboard state
+  server/game-fns.ts    issue/start/hint/submit/leaderboard server functions
+  server/game-token.ts  HMAC-signed stateless game tokens
+  server/verify.ts      replay and hint verification from the seed
+  server/score.ts       the score formula
+  server/db/            Drizzle schema, SQLite client, ranking queries
   lib/clerk.ts          key detection plus the shared Clerk appearance
   lib/theme.ts          theme resolution, storage key, pre-paint init script
   start.ts              CSRF middleware, plus Clerk middleware when configured
-  styles.css            the original stylesheet, ported
-tests/                  engine and parity suites
+  styles.css            the original stylesheet plus the leaderboard layout
+tests/                  engine, parity, token, verification, score, database
 legacy/                 the original HTML and design notes, untouched
+drizzle/                committed SQL migrations for the development database
 ```
 
-## Roadmap
+## Database and deployment
 
-The next stage adds a Postgres leaderboard behind Clerk sign-in, with
-server-issued, signed puzzle tokens and server-verified scores. Until then the
-game is fully playable offline, bests live in `localStorage` exactly like the
-original, and signing in only establishes identity.
+Development uses SQLite (`better-sqlite3` + Drizzle) at
+`.data/lights-out.db`, which is gitignored. Migrations in `drizzle/` are
+applied automatically the first time the server opens the database. The ranking
+queries use standard CTEs and window functions, so the production step is a
+Postgres adapter plus a managed `DATABASE_URL`; the columns and SQL stay the
+same.
+
+Set `PUZZLE_SECRET` in the deployment environment (`openssl rand -hex 32`).
+Tokens cannot be signed without it in production.
+
+## License
+
+Licensed under the [GNU General Public License v3.0](LICENSE).

@@ -1,5 +1,9 @@
 export type Grid = readonly boolean[]
 
+export const SIZES = [3, 4, 5] as const
+
+export type Size = (typeof SIZES)[number]
+
 export type RandomSource = () => number
 
 export interface Puzzle {
