@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { AccountChip } from '../components/AccountChip'
 import { Board } from '../components/Board'
 import { Controls } from '../components/Controls'
 import { Message } from '../components/Message'
@@ -21,6 +22,8 @@ function Game() {
 
   return (
     <main className="app">
+      <AccountChip />
+
       <h1>Lights Out</h1>
       <p className="sub">
         Tap a tile to flip it and its neighbors. Turn every light off.

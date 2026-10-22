@@ -16,6 +16,36 @@ npm run build    # production build
 npm run typecheck
 ```
 
+## Accounts
+
+Sign-in is powered by [Clerk](https://clerk.com). Copy `.env.example` to
+`.env.local` and fill in the keys from your Clerk application. Without a
+publishable key the app still runs, as a guest-only game — useful for fresh
+clones and CI.
+
+```bash
+cp .env.example .env.local
+```
+
+The app is wired for Google, GitHub, Discord, and Spotify. Clerk's development
+instance supplies shared OAuth credentials for Google, GitHub, and Discord, so
+those work without setting anything up. **Spotify requires your own OAuth
+client** (Client ID and Secret from the Spotify developer dashboard), added in
+Clerk under *SSO connections → Spotify*; it then appears on the sign-in screen
+automatically. Enabling it in code is deliberately not a separate flag — Clerk
+renders whichever providers the instance has enabled.
+
+Routes:
+
+| Route | Purpose |
+| --- | --- |
+| `/sign-in/*` | themed Clerk `<SignIn />` |
+| `/sign-up/*` | themed Clerk `<SignUp />` |
+
+The fixed corner chip on the game page shows **Sign in** for guests and the
+Clerk user button for signed-in players. Account state currently only proves
+identity; score sync and the leaderboard land with the Postgres work below.
+
 ## What is ported
 
 The original was one 115-line file with all state in a closure. The port keeps
@@ -67,10 +97,15 @@ Run it with `npm test`.
 ```
 src/
   routes/index.tsx      game page; the loader supplies the puzzle seed
-  routes/__root.tsx     document shell and metadata
-  components/           Board, Tile, SizePicker, StatBar, Controls, Message
+  routes/__root.tsx     document shell, metadata, conditional ClerkProvider
+  routes/sign-in.$.tsx  themed Clerk sign-in (and its sub-steps)
+  routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
+  components/           Board, Tile, SizePicker, StatBar, Controls, Message,
+                        AccountChip, AuthShell
   game/                 engine, scramble, RNG, types (no DOM, no React)
   hooks/useGame.ts      game state, scoring, hint timer, localStorage bests
+  lib/clerk.ts          key detection plus the shared Clerk appearance
+  start.ts              CSRF middleware, plus Clerk middleware when configured
   styles.css            the original stylesheet, ported
 tests/                  engine and parity suites
 legacy/                 the original HTML and design notes, untouched
@@ -78,7 +113,7 @@ legacy/                 the original HTML and design notes, untouched
 
 ## Roadmap
 
-The next stage adds a Postgres leaderboard behind Clerk sign-in (Google,
-GitHub, Discord, and Spotify behind a flag), with server-issued, signed puzzle
-tokens and server-verified scores. Until then the game is fully playable
-offline and bests live in `localStorage`, exactly like the original.
+The next stage adds a Postgres leaderboard behind Clerk sign-in, with
+server-issued, signed puzzle tokens and server-verified scores. Until then the
+game is fully playable offline, bests live in `localStorage` exactly like the
+original, and signing in only establishes identity.

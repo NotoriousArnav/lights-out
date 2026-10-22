@@ -1,6 +1,8 @@
+import { ClerkProvider } from '@clerk/tanstack-react-start'
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
+import { clerkAppearance, clerkEnabled } from '../lib/clerk'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -36,7 +38,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        {clerkEnabled ? (
+          <ClerkProvider appearance={clerkAppearance}>{children}</ClerkProvider>
+        ) : (
+          children
+        )}
 
         <Scripts />
       </body>
