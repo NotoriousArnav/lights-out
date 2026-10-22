@@ -123,6 +123,19 @@ h1 {
   font-size: 1.6rem;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
 p.sub {
   margin: 0 0 14px;
   color: var(--muted);
@@ -241,6 +254,41 @@ button:focus-visible {
   background: var(--card);
   color: var(--muted);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.offline-notice {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 0.8rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.pwa-update {
+  position: fixed;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 9px 10px 9px 12px;
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.8rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.pwa-update button {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
 }
 
 .account__signin {

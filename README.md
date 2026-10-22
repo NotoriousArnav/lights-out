@@ -11,6 +11,9 @@ fewer hints, and less time make a better score.
 - **Rahul Chakraborty** — developer of the original, single-file legacy game.
 - **Arnav Ghosh** — ported the game to React + TanStack Start, added the
   server-verified leaderboard, and deployed it.
+- **Twemoji** — the light-bulb logo uses the Twemoji `1f4a1` graphic,
+  copyright 2020 Twitter, Inc and other contributors, licensed under
+  [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Getting started
 
@@ -137,20 +140,26 @@ src/
   routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
   routes/[__clerk].$    Clerk Frontend API proxy for *.vercel.app
   components/           Board, Tile, SizePicker, StatBar, Controls, Message,
-                        AccountChip, AuthShell, ThemeToggle, SourceLink,
-                        HighScores, ScoresDialog, SaveStatus
+                        AccountChip, AuthShell, BrandTitle, ThemeToggle,
+                        SourceLink, HighScores, ScoresDialog, SaveStatus,
+                        OfflineNotice, PwaRegistration
   game/                 engine, scramble, RNG, types (no DOM, no React)
   hooks/useGame.ts      game state, first-move clock, hints, bests, submit
   hooks/useLeaderboard.ts  paged, refreshable leaderboard state
+  hooks/useOnlineStatus.ts  browser connection state for the offline notice
   server/game-fns.ts    issue/start/hint/submit/leaderboard server functions
   server/game-token.ts  HMAC-signed stateless game tokens
   server/verify.ts      replay and hint verification from the seed
   server/score.ts       the score formula
   server/db/            Drizzle schemas, SQLite and Neon stores, ranking queries
   lib/clerk.ts          key detection plus the shared Clerk appearance
+  lib/seo.ts            canonical origin, social metadata, JSON-LD
   lib/theme.ts          theme resolution, storage key, pre-paint init script
   start.ts              CSRF middleware, plus Clerk middleware when configured
   styles.css            the original stylesheet plus the leaderboard layout
+  public/               manifest, brand icons, social card, robots/sitemap,
+                        and the offline fallback page
+  scripts/              service-worker template and post-build generator
 tests/                  engine, parity, token, verification, score, database
 legacy/                 the original HTML and design notes, untouched
 drizzle/                committed SQL migrations for the development database
@@ -206,6 +215,56 @@ fully branded auth require an owned custom domain.
 Set `PUZZLE_SECRET` in the deployment environment (`openssl rand -hex 32`).
 Tokens cannot be signed without it in production, and the value must stay
 stable across deployments.
+
+## PWA
+
+`npm run build` runs Vite/Nitro. A Vite `closeBundle` plugin invokes
+`scripts/build-sw.mjs` after the client bundle and before Nitro packages the
+server, writing `sw.js` into `.output/public` for the node-server build or
+`.vercel/output/static` for the Vercel preset. That ordering matters: the node
+server only serves files listed in Nitro's generated public-assets manifest.
+The manifest, icons, and offline fallback live in `public/`. The service worker
+is registered only in production, so development is never served stale cached
+assets.
+
+The current PWA is an installable shell with a cached offline page. Static
+assets and the offline page work without a connection, but Clerk sign-in, hints,
+new puzzles, score submission, and the leaderboard all require the server.
+Offline practice mode is intentionally not implemented yet.
+
+When a new deployment changes the generated service worker, an existing tab
+shows a **New version ready** prompt. Accepting it activates the waiting worker
+and reloads, so an in-progress game is not interrupted automatically.
+
+To test locally:
+
+1. Run `npm run build` and `npm run start`.
+2. Open the local server in Chrome.
+3. Use **DevTools → Application → Manifest** to check installability.
+4. Use **Application → Service Workers** to confirm `/sw.js` is activated.
+5. Switch the network to **Offline** and reload; the offline page should appear.
+
+The build script logs the number of precached files and the cache version. If a
+service worker is stuck during development, unregister it from the Application
+panel and clear the site data.
+
+## SEO and social previews
+
+`src/lib/seo.ts` is the single source of truth for the production origin, page
+title, description, social image URL, and structured data. The root document
+renders canonical Open Graph and X/Twitter tags, and the home route adds the
+canonical URL. The sign-in and sign-up routes are marked `noindex, nofollow`.
+
+`public/og-image.png` is the 1200×630 social card. `public/robots.txt` allows
+crawling of the game, blocks Clerk/server endpoints and auth pages, and points
+to `public/sitemap.xml`. X cards use `@arnv2004` for both `twitter:site` and
+`twitter:creator`.
+
+If the app moves to a custom domain, update `SITE_URL` in `src/lib/seo.ts`, the
+URL printed on the social card, and the URLs in `robots.txt` and `sitemap.xml`.
+Social platforms cache previews; after deploying metadata changes, refresh the
+card with the Facebook Sharing Debugger, LinkedIn Post Inspector, or X's card
+validator.
 
 ## License
 

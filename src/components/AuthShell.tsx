@@ -1,6 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { BrandTitle } from './BrandTitle'
+
 type AuthShellProps = {
   subtitle: string
   children: ReactNode
@@ -15,7 +17,7 @@ export function AuthShell({ subtitle, children }: AuthShellProps) {
   return (
     <main className="auth">
       <div className="auth__brand">
-        <h1>Lights Out</h1>
+        <BrandTitle />
         <p className="sub">{subtitle}</p>
       </div>
 

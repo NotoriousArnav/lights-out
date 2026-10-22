@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Disallow: /__clerk
+Disallow: /_serverFn
+Disallow: /api
+Disallow: /sign-in
+Disallow: /sign-up
+
+Sitemap: https://lights-out-puzzle-game.vercel.app/sitemap.xml

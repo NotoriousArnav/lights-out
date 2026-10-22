@@ -4,9 +4,11 @@ import { useAuth } from '@clerk/tanstack-react-start'
 
 import { AccountChip } from '../components/AccountChip'
 import { Board } from '../components/Board'
+import { BrandTitle } from '../components/BrandTitle'
 import { Controls } from '../components/Controls'
 import { HighScores } from '../components/HighScores'
 import { Message } from '../components/Message'
+import { OfflineNotice } from '../components/OfflineNotice'
 import { SaveStatus } from '../components/SaveStatus'
 import { ScoresDialog } from '../components/ScoresDialog'
 import { SizePicker } from '../components/SizePicker'
@@ -15,10 +17,14 @@ import type { Size } from '../game/types'
 import { useGame } from '../hooks/useGame'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { clerkEnabled } from '../lib/clerk'
+import { SITE_URL } from '../lib/seo'
 import { issueGame } from '../server/game-fns'
 import type { IssuedGame } from '../server/game-fns'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    links: [{ rel: 'canonical', href: `${SITE_URL}/` }],
+  }),
   // The server picks the seed, signs it into the game token, and sends both
   // back. The client rebuilds the same board from the seed, while every
   // score is verified against the signed token.
@@ -92,8 +98,9 @@ function GameView({ initial, signedIn, userId }: GameViewProps) {
     <div className="layout">
       <main className="app">
         <AccountChip />
+        <OfflineNotice />
 
-        <h1>Lights Out</h1>
+        <BrandTitle />
         <p className="sub">
           Tap a tile to flip it and its neighbors. Turn every light off.
         </p>

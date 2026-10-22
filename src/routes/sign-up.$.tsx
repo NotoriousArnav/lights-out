@@ -11,6 +11,9 @@ import { AuthShell } from '../components/AuthShell'
 import { clerkEnabled } from '../lib/clerk'
 
 export const Route = createFileRoute('/sign-up/$')({
+  head: () => ({
+    meta: [{ name: 'robots', content: 'noindex, nofollow' }],
+  }),
   component: SignUpPage,
 })
 
