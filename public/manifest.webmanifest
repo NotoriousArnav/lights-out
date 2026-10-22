@@ -10,6 +10,22 @@
   "theme_color": "#f4f1ea",
   "lang": "en",
   "categories": ["games", "puzzle"],
+  "screenshots": [
+    {
+      "src": "/screenshots/lights-out-mobile.png",
+      "sizes": "1080x2083",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Lights Out game board on a phone"
+    },
+    {
+      "src": "/screenshots/lights-out-desktop.png",
+      "sizes": "1900x977",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Lights Out game on desktop"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
