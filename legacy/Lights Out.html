@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lights Out</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--text:#1f2430;--muted:#6b7280;--off:#dcd7cb;--on:#f5a623;--glow:rgba(245,166,35,.55);--accent:#2f5bea;--hint:#2f5bea;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161c;--card:#1e222b;--text:#eceff4;--muted:#9aa3b2;--off:#2c313d;--on:#ffc14d;--glow:rgba(255,193,77,.5);--accent:#7c9bff;--hint:#7c9bff}}
+:root[data-theme="dark"]{--bg:#14161c;--card:#1e222b;--text:#eceff4;--muted:#9aa3b2;--off:#2c313d;--on:#ffc14d;--glow:rgba(255,193,77,.5);--accent:#7c9bff;--hint:#7c9bff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;align-items:center}
+.app{width:100%;max-width:420px;padding:16px;text-align:center}
+h1{margin:0 0 4px;font-size:1.6rem}
+p.sub{margin:0 0 14px;color:var(--muted);font-size:.9rem}
+.sizes,.bar{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
+button{font:inherit;border:0;border-radius:10px;padding:9px 14px;background:var(--card);color:var(--text);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+button.active{background:var(--accent);color:#fff}
+.stat{display:flex;justify-content:space-between;margin:0 4px 10px;color:var(--muted);font-size:.95rem}
+.stat b{color:var(--text)}
+#board{display:grid;gap:8px;background:var(--card);padding:10px;border-radius:16px;box-shadow:0 4px 14px rgba(0,0,0,.15)}
+.cell{aspect-ratio:1;border-radius:12px;padding:0;background:var(--off);box-shadow:none;transition:background .15s,box-shadow .15s,transform .1s}
+.cell.on{background:var(--on);box-shadow:0 0 16px var(--glow)}
+.cell:active{transform:scale(.93)}
+.cell.hint{outline:4px solid var(--hint);outline-offset:-4px}
+#msg{min-height:1.6em;margin-top:14px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Lights Out</h1>
+  <p class="sub">Tap a tile to flip it and its neighbors. Turn every light off.</p>
+  <div class="sizes" id="sizes"></div>
+  <div class="stat"><span>Moves: <b id="moves">0</b></span><span>Best: <b id="best">–</b></span></div>
+  <div id="board"></div>
+  <div class="bar"><button id="hint">Hint</button><button id="reset">New puzzle</button></div>
+  <div id="msg"></div>
+</div>
+<script>
+(function(){
+  var n=4, grid=[], sol=new Set(), moves=0, done=false, hintTimer=null, bests={};
+  try{bests=JSON.parse(localStorage.getItem('lo-best')||'{}')||{};}catch(e){bests={};}
+  var board=document.getElementById('board'), movesEl=document.getElementById('moves'),
+      bestEl=document.getElementById('best'), msg=document.getElementById('msg');
+
+  function flip(i){
+    var r=Math.floor(i/n), c=i%n;
+    [[0,0],[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){
+      var rr=r+d[0], cc=c+d[1];
+      if(rr>=0&&rr<n&&cc>=0&&cc<n){var k=rr*n+cc;grid[k]=!grid[k];}
+    });
+    if(sol.has(i))sol.delete(i);else sol.add(i);
+  }
+  function build(){
+    board.style.gridTemplateColumns='repeat('+n+',1fr)';
+    board.innerHTML='';
+    for(var i=0;i<n*n;i++){
+      var b=document.createElement('button');
+      b.className='cell';b.setAttribute('aria-label','Tile '+(i+1));
+      (function(i){b.onclick=function(){press(i);};})(i);
+      board.appendChild(b);
+    }
+  }
+  function render(){
+    var cells=board.children;
+    for(var i=0;i<cells.length;i++)cells[i].classList.toggle('on',grid[i]);
+    movesEl.textContent=moves;
+    bestEl.textContent=bests[n]!=null?bests[n]:'–';
+  }
+  function newGame(){
+    clearTimeout(hintTimer);
+    done=false;moves=0;msg.textContent='';
+    do{
+      grid=new Array(n*n).fill(false);sol=new Set();
+      for(var k=0;k<n*n*2;k++)flip(Math.floor(Math.random()*n*n));
+    }while(!grid.some(Boolean));
+    build();render();
+  }
+  function press(i){
+    if(done)return;
+    flip(i);moves++;render();
+    if(!grid.some(Boolean)){
+      done=true;
+      var isBest=bests[n]==null||moves<bests[n];
+      if(isBest){bests[n]=moves;try{localStorage.setItem('lo-best',JSON.stringify(bests));}catch(e){}}
+      render();
+      msg.textContent='Solved in '+moves+' moves'+(isBest?' – a new best!':'.');
+    }
+  }
+  document.getElementById('hint').onclick=function(){
+    if(done||!sol.size)return;
+    var i=sol.values().next().value, cells=board.children;
+    for(var k=0;k<cells.length;k++)cells[k].classList.remove('hint');
+    cells[i].classList.add('hint');
+    clearTimeout(hintTimer);
+    hintTimer=setTimeout(function(){cells[i].classList.remove('hint');},1800);
+  };
+  document.getElementById('reset').onclick=newGame;
+  var sizes=document.getElementById('sizes');
+  [3,4,5].forEach(function(s){
+    var b=document.createElement('button');
+    b.textContent=s+'×'+s;if(s===n)b.className='active';
+    b.onclick=function(){
+      n=s;Array.prototype.forEach.call(sizes.children,function(x){x.classList.remove('active');});
+      b.classList.add('active');newGame();
+    };
+    sizes.appendChild(b);
+  });
+  newGame();
+})();
+</script>
+</body>
+</html>
