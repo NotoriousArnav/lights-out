@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Validate PWA manifest
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+
+          const manifest = JSON.parse(
+            fs.readFileSync('public/manifest.webmanifest', 'utf8'),
+          )
+
+          for (const key of ['name', 'short_name', 'start_url', 'display', 'icons']) {
+            if (!manifest[key]) throw new Error(`Manifest is missing ${key}`)
+          }
+
+          for (const screenshot of manifest.screenshots ?? []) {
+            if (!screenshot.src || !screenshot.sizes || !screenshot.type) {
+              throw new Error('Every screenshot needs src, sizes, and type')
+            }
+
+            const file = path.join('public', screenshot.src)
+            if (!fs.existsSync(file)) {
+              throw new Error(`Missing manifest screenshot: ${file}`)
+            }
+          }
+
+          console.log(
+            `Manifest OK: ${manifest.icons.length} icons, ${manifest.screenshots?.length ?? 0} screenshots`,
+          )
+          NODE
