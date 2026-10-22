@@ -3,6 +3,7 @@ import { useId } from 'react'
 import type { Size } from '../game/types'
 import { SIZES } from '../game/types'
 import type { LeaderboardEntry } from '../server/db/scores'
+import { Spinner } from './Spinner'
 
 interface HighScoresProps {
   size: Size
@@ -75,13 +76,19 @@ export function HighScores({
         ))}
       </div>
 
-      <div className="scores__list-wrap">
+      <div className="scores__list-wrap" aria-busy={loading}>
         {loading ? (
-          <div className="scores__skeleton" aria-label="Loading scores">
-            {[0, 1, 2, 3].map((row) => (
-              <span key={row} />
-            ))}
-          </div>
+          <>
+            <div className="scores__loading" role="status">
+              <Spinner size="sm" />
+              <span>Loading scores…</span>
+            </div>
+            <div className="scores__skeleton" aria-hidden="true">
+              {[0, 1, 2, 3].map((row) => (
+                <span key={row} />
+              ))}
+            </div>
+          </>
         ) : error ? (
           <p className="scores__empty">Scores are unavailable right now.</p>
         ) : rows.length === 0 ? (
@@ -122,7 +129,14 @@ export function HighScores({
           </span>
           {rows.length < total && (
             <button type="button" onClick={onLoadMore} disabled={loadingMore}>
-              {loadingMore ? 'Loading…' : 'Load more'}
+              {loadingMore ? (
+                <>
+                  <Spinner size="sm" />
+                  Loading…
+                </>
+              ) : (
+                'Load more'
+              )}
             </button>
           )}
         </footer>

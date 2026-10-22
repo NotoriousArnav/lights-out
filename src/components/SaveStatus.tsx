@@ -1,4 +1,5 @@
 import type { SaveState } from '../hooks/useGame'
+import { Spinner } from './Spinner'
 
 interface SaveStatusProps {
   save: SaveState
@@ -19,8 +20,9 @@ export function SaveStatus({ save, signedIn }: SaveStatusProps) {
 
   if (save.status === 'saving') {
     return (
-      <p className="save-status" role="status">
-        Saving score…
+      <p className="save-status save-status--saving" role="status">
+        <Spinner size="sm" />
+        <span>Saving score…</span>
       </p>
     )
   }

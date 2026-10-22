@@ -1,6 +1,12 @@
-import { Show, UserButton } from '@clerk/tanstack-react-start'
+import {
+  ClerkLoaded,
+  ClerkLoading,
+  Show,
+  UserButton,
+} from '@clerk/tanstack-react-start'
 
 import { clerkEnabled } from '../lib/clerk'
+import { Spinner } from './Spinner'
 
 /**
  * Small fixed corner control. Signed-out guests still get the full game;
@@ -12,21 +18,29 @@ export function AccountChip() {
 
   return (
     <div className="account">
-      <Show when="signed-out">
-        <a className="account__signin" href="/sign-in">
-          Sign in
-        </a>
-      </Show>
+      <ClerkLoading>
+        <span className="account__loading">
+          <Spinner size="sm" label="Loading account" />
+        </span>
+      </ClerkLoading>
 
-      <Show when="signed-in">
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: { width: '30px', height: '30px' },
-            },
-          }}
-        />
-      </Show>
+      <ClerkLoaded>
+        <Show when="signed-out">
+          <a className="account__signin" href="/sign-in">
+            Sign in
+          </a>
+        </Show>
+
+        <Show when="signed-in">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: { width: '30px', height: '30px' },
+              },
+            }}
+          />
+        </Show>
+      </ClerkLoaded>
     </div>
   )
 }
