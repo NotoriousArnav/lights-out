@@ -3,43 +3,15 @@ import { sql } from 'drizzle-orm'
 import type { Size } from '../../game/types'
 import type { Db } from './client'
 import { scores, users } from './schema'
+import {
+  DuplicateScoreError,
+  type LeaderboardEntry,
+  type NewScore,
+  type PlayerProfile,
+} from './store'
 
-export interface LeaderboardEntry {
-  userId: string
-  displayName: string
-  imageUrl: string | null
-  moves: number
-  hints: number
-  elapsedMs: number
-  score: number
-  place: number
-}
-
-export interface NewScore {
-  id: string
-  userId: string
-  size: Size
-  moves: number
-  hints: number
-  elapsedMs: number
-  score: number
-  jti: string
-  createdAtMs: number
-}
-
-export interface PlayerProfile {
-  id: string
-  username: string | null
-  displayName: string
-  imageUrl: string | null
-}
-
-export class DuplicateScoreError extends Error {
-  constructor() {
-    super('This game has already been submitted')
-    this.name = 'DuplicateScoreError'
-  }
-}
+export { DuplicateScoreError }
+export type { LeaderboardEntry, NewScore, PlayerProfile }
 
 export function upsertUser(db: Db, profile: PlayerProfile): void {
   const updatedAtMs = Date.now()

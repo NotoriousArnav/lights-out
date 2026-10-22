@@ -4,15 +4,8 @@ import { createServerFn } from '@tanstack/react-start'
 
 import type { Size } from '../game/types'
 import { clerkProfile, currentUserId } from './auth'
-import { getDb } from './db/client'
-import {
-  DuplicateScoreError,
-  countPlayers,
-  getLeaderboard,
-  getPlayerPlace,
-  insertScore,
-  upsertUser,
-} from './db/scores'
+import { getStore } from './db/get-store'
+import { DuplicateScoreError, type LeaderboardEntry } from './db/store'
 import {
   GameTokenError,
   readGameToken,
@@ -64,7 +57,7 @@ export type SubmitResult =
 export type LeaderboardResult =
   | {
       ok: true
-      rows: Awaited<ReturnType<typeof getLeaderboard>>
+      rows: LeaderboardEntry[]
       total: number
       page: number
       pageSize: number
@@ -240,9 +233,9 @@ export const submitScore = createServerFn({ method: 'POST' })
     const profile = await clerkProfile(userId)
 
     try {
-      const db = getDb()
-      upsertUser(db, profile)
-      insertScore(db, {
+      const store = await getStore()
+      await store.upsertUser(profile)
+      await store.insertScore({
         id: randomUUID(),
         userId,
         size: pickup.size,
@@ -254,14 +247,19 @@ export const submitScore = createServerFn({ method: 'POST' })
         createdAtMs: Date.now(),
       })
 
+      const [place, total] = await Promise.all([
+        store.getPlayerPlace(pickup.size, userId),
+        store.countPlayers(pickup.size),
+      ])
+
       return {
         ok: true,
         score,
         moves,
         hints: pickup.hints,
         elapsedMs,
-        place: getPlayerPlace(db, pickup.size, userId),
-        total: countPlayers(db, pickup.size),
+        place,
+        total,
       }
     } catch (error) {
       if (error instanceof DuplicateScoreError) {
@@ -281,16 +279,20 @@ export const fetchLeaderboard = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }): Promise<LeaderboardResult> => {
     try {
-      const db = getDb()
-      return {
-        ok: true,
-        rows: getLeaderboard(
-          db,
+      const store = await getStore()
+      const [rows, total] = await Promise.all([
+        store.getLeaderboard(
           data.size,
           LEADERBOARD_PAGE_SIZE,
           data.page * LEADERBOARD_PAGE_SIZE,
         ),
-        total: countPlayers(db, data.size),
+        store.countPlayers(data.size),
+      ])
+
+      return {
+        ok: true,
+        rows,
+        total,
         page: data.page,
         pageSize: LEADERBOARD_PAGE_SIZE,
       }

@@ -108,6 +108,8 @@ the same rules and splits them into a pure engine plus a React view:
 - A light/dark toggle in the top-left overrides the system palette and
   remembers the choice in `localStorage['lo-theme']`. A tiny head script
   applies the saved theme before first paint, so there is no flash.
+- A GitHub source link sits beside the theme toggle and stays available even
+  when Clerk is not configured.
 
 ## Parity tests
 
@@ -131,8 +133,8 @@ src/
   routes/sign-in.$.tsx  themed Clerk sign-in (and its sub-steps)
   routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
   components/           Board, Tile, SizePicker, StatBar, Controls, Message,
-                        AccountChip, AuthShell, ThemeToggle, HighScores,
-                        ScoresDialog, SaveStatus
+                        AccountChip, AuthShell, ThemeToggle, SourceLink,
+                        HighScores, ScoresDialog, SaveStatus
   game/                 engine, scramble, RNG, types (no DOM, no React)
   hooks/useGame.ts      game state, first-move clock, hints, bests, submit
   hooks/useLeaderboard.ts  paged, refreshable leaderboard state
@@ -140,7 +142,7 @@ src/
   server/game-token.ts  HMAC-signed stateless game tokens
   server/verify.ts      replay and hint verification from the seed
   server/score.ts       the score formula
-  server/db/            Drizzle schema, SQLite client, ranking queries
+  server/db/            Drizzle schemas, SQLite and Neon stores, ranking queries
   lib/clerk.ts          key detection plus the shared Clerk appearance
   lib/theme.ts          theme resolution, storage key, pre-paint init script
   start.ts              CSRF middleware, plus Clerk middleware when configured
@@ -148,19 +150,39 @@ src/
 tests/                  engine, parity, token, verification, score, database
 legacy/                 the original HTML and design notes, untouched
 drizzle/                committed SQL migrations for the development database
+drizzle-pg/             committed SQL migrations for Postgres
+vercel.json             TanStack Start framework preset and build command
 ```
 
 ## Database and deployment
 
 Development uses SQLite (`better-sqlite3` + Drizzle) at
 `.data/lights-out.db`, which is gitignored. Migrations in `drizzle/` are
-applied automatically the first time the server opens the database. The ranking
-queries use standard CTEs and window functions, so the production step is a
-Postgres adapter plus a managed `DATABASE_URL`; the columns and SQL stay the
-same.
+applied automatically the first time the server opens the database.
+
+Production uses Postgres (`@neondatabase/serverless` +
+`drizzle-orm/neon-http`). Generate and apply its migrations separately, using
+the direct Neon connection string:
+
+```bash
+npm run db:generate:pg
+DATABASE_URL="$DIRECT_DATABASE_URL" npm run db:migrate:pg
+```
+
+The app reads the pooled Neon URL from `DATABASE_URL` at runtime. Do not run
+migrations from the Vercel build; apply them once, before the first production
+request.
+
+The app deploys as one Vercel project: Vite builds the client, and Nitro turns
+the SSR entry and server functions into Vercel Functions. `vercel.json` selects
+the TanStack Start preset; Vercel handles the rest. Add the variables from
+`.env.example` in the Vercel project settings, using live Clerk keys and a
+pooled Neon URL for Production. `.env.prod` and other local env files are
+gitignored and are not read by Vercel.
 
 Set `PUZZLE_SECRET` in the deployment environment (`openssl rand -hex 32`).
-Tokens cannot be signed without it in production.
+Tokens cannot be signed without it in production, and the value must stay
+stable across deployments.
 
 ## License
 

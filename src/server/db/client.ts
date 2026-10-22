@@ -16,7 +16,7 @@ function databasePath(): string {
   if (!url) return resolve(process.cwd(), DEFAULT_PATH)
   if (url.startsWith('postgres://') || url.startsWith('postgresql://')) {
     throw new Error(
-      'Production Postgres is not wired yet. Use a file: DATABASE_URL in development.',
+      'This helper only opens SQLite. Use getStore() for a Postgres URL.',
     )
   }
   return url.startsWith('file:') ? url.slice('file:'.length) : url

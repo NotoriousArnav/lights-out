@@ -4,6 +4,7 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import appCss from '../styles.css?url'
 import { clerkAppearance, clerkEnabled } from '../lib/clerk'
 import { themeInitScript } from '../lib/theme'
+import { SourceLink } from '../components/SourceLink'
 import { ThemeToggle } from '../components/ThemeToggle'
 
 export const Route = createRootRoute({
@@ -41,7 +42,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <ThemeToggle />
+        <div className="corner-actions">
+          <ThemeToggle />
+          <SourceLink />
+        </div>
 
         {clerkEnabled ? (
           <ClerkProvider appearance={clerkAppearance}>{children}</ClerkProvider>
