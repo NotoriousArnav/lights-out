@@ -20,6 +20,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/backend": "^3.26.1",
     "@clerk/tanstack-react-start": "^1.7.5",
     "@neondatabase/serverless": "^1.2.0",
     "@tanstack/react-router": "1.170.45",

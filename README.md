@@ -36,18 +36,21 @@ cp .env.example .env.local
 
 The app is wired for Google, GitHub, Discord, and Spotify. Clerk's development
 instance supplies shared OAuth credentials for Google, GitHub, and Discord, so
-those work without setting anything up. **Spotify requires your own OAuth
-client** (Client ID and Secret from the Spotify developer dashboard), added in
-Clerk under _SSO connections → Spotify_; it then appears on the sign-in screen
-automatically. Enabling it in code is deliberately not a separate flag — Clerk
-renders whichever providers the instance has enabled.
+those work locally without setting anything up. A Clerk **production** instance
+does not inherit those shared credentials: configure Google, GitHub, and Discord
+with your own OAuth apps in the production instance. **Spotify requires your own
+OAuth client** (Client ID and Secret from the Spotify developer dashboard),
+added in Clerk under _SSO connections → Spotify_; it then appears on the sign-in
+screen automatically. Enabling it in code is deliberately not a separate flag —
+Clerk renders whichever providers the instance has enabled.
 
 Routes:
 
-| Route        | Purpose                   |
-| ------------ | ------------------------- |
-| `/sign-in/*` | themed Clerk `<SignIn />` |
-| `/sign-up/*` | themed Clerk `<SignUp />` |
+| Route         | Purpose                                      |
+| ------------- | -------------------------------------------- |
+| `/sign-in/*`  | themed Clerk `<SignIn />`                    |
+| `/sign-up/*`  | themed Clerk `<SignUp />`                    |
+| `/__clerk/*`  | Clerk Frontend API proxy for `*.vercel.app`  |
 
 The fixed corner chip on the game page shows **Sign in** for guests and the
 Clerk user button for signed-in players. Signing in is required to post a score
@@ -132,6 +135,7 @@ src/
   routes/__root.tsx     document shell, metadata, conditional ClerkProvider
   routes/sign-in.$.tsx  themed Clerk sign-in (and its sub-steps)
   routes/sign-up.$.tsx  themed Clerk sign-up (and its sub-steps)
+  routes/[__clerk].$    Clerk Frontend API proxy for *.vercel.app
   components/           Board, Tile, SizePicker, StatBar, Controls, Message,
                         AccountChip, AuthShell, ThemeToggle, SourceLink,
                         HighScores, ScoresDialog, SaveStatus
@@ -179,6 +183,25 @@ the TanStack Start preset; Vercel handles the rest. Add the variables from
 `.env.example` in the Vercel project settings, using live Clerk keys and a
 pooled Neon URL for Production. `.env.prod` and other local env files are
 gitignored and are not read by Vercel.
+
+### Clerk on `*.vercel.app`
+
+The demo deployment is a Clerk production instance on
+`lights-out-puzzle-game.vercel.app`. Clerk's SDKs automatically proxy Frontend
+API requests through the app origin at `/__clerk`; the TanStack Start route
+`src/routes/[__clerk].$.ts` forwards those requests to Clerk. Do not create DNS
+records for `vercel.app`.
+
+Use the live publishable and secret keys from the same production instance for
+Vercel's Production environment, and development keys for Preview. A production
+instance needs its own OAuth apps for Google, GitHub, and Discord; the shared
+development credentials do not carry over. Because a `vercel.app` host cannot
+own email DNS records, sign-in, sign-up, verification, and password-reset emails
+use Clerk's shared `accounts.dev` infrastructure — test delivery with a real
+mailbox before launch. `clerk deploy status` may still report `mail: pending`
+because it expects DNS records; that check is not actionable for `vercel.app`.
+Custom email templates, email links, invitations, organization invitations, and
+fully branded auth require an owned custom domain.
 
 Set `PUZZLE_SECRET` in the deployment environment (`openssl rand -hex 32`).
 Tokens cannot be signed without it in production, and the value must stay
