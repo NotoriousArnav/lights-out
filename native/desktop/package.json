@@ -1,0 +1,60 @@
+{
+  "name": "lights-out-desktop",
+  "version": "1.0.0",
+  "description": "Desktop shell for the Lights Out puzzle",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "author": "Arnav Ghosh",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "app.lightsout.desktop",
+    "productName": "Lights Out",
+    "copyright": "Copyright © 2026 Arnav Ghosh",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "artifactName": "LightsOut-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.puzzle-games",
+      "icon": "build/icon.png",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "category": "Game",
+      "icon": "build/icon.png",
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ]
+    }
+  }
+}

@@ -1,0 +1,67 @@
+plugins {
+    id 'com.android.application'
+}
+
+def appVersionCode = (System.getenv('ANDROID_VERSION_CODE') ?: '1').toInteger()
+def appVersionName = System.getenv('ANDROID_VERSION_NAME') ?: '1.0.0'
+def appKeystorePath = System.getenv('ANDROID_KEYSTORE_PATH')
+def appKeystorePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+def appKeyAlias = System.getenv('ANDROID_KEY_ALIAS')
+def appKeyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+
+android {
+    namespace 'app.lightsout.puzzle'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'app.lightsout.puzzle'
+        minSdk 24
+        targetSdk 36
+        versionCode appVersionCode
+        versionName appVersionName
+    }
+
+    signingConfigs {
+        if (appKeystorePath) {
+            release {
+                storeFile file(appKeystorePath)
+                storePassword appKeystorePassword
+                keyAlias appKeyAlias
+                keyPassword appKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (appKeystorePath) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+            universalApk true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.4'
+}

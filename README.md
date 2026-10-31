@@ -159,7 +159,9 @@ src/
   styles.css            the original stylesheet plus the leaderboard layout
   public/               manifest, brand icons, social card, robots/sitemap,
                         and the offline fallback page
-  scripts/              service-worker template and post-build generator
+  scripts/              service-worker template, post-build generator, PWA checks
+native/desktop/       Electron thin shell and electron-builder configuration
+native/android/       Trusted Web Activity Android project
 tests/                  engine, parity, token, verification, score, database
 legacy/                 the original HTML and design notes, untouched
 drizzle/                committed SQL migrations for the development database
@@ -247,6 +249,83 @@ To test locally:
 The build script logs the number of precached files and the cache version. If a
 service worker is stuck during development, unregister it from the Application
 panel and clear the site data.
+
+## Native apps
+
+Both native shells load the production PWA. They do not embed the Nitro server or
+implement a second score path, so moves, hints, elapsed time, and scores remain
+server-verified.
+
+### Desktop (Electron)
+
+`native/desktop` is a thin Electron shell. It loads
+`https://lights-out-puzzle-game.vercel.app` by default; set `LIGHTS_OUT_URL` to
+point a local run at another origin.
+
+```bash
+npm ci --prefix native/desktop
+npm start --prefix native/desktop
+npm run dist --prefix native/desktop
+```
+
+`electron-builder` writes installers to `native/desktop/release/`. CI builds
+macOS x64/arm64, Windows x64/arm64, and Linux x64/arm64 packages on every branch
+push. The official Electron project does not publish Linux RISC-V binaries, so
+that target is not in the matrix; it would need the `riscv-forks` Electron build
+and a custom `electronDist` configuration.
+
+The shell keeps web navigation on the production origin and sends other links to
+the system browser. Email/password Clerk flows stay in the app; social OAuth
+providers that require a system browser need a custom protocol/session handoff
+before they can sign in the desktop shell.
+
+CI builds are unsigned, so macOS Gatekeeper and Windows SmartScreen will warn
+until Apple Developer ID and Windows code-signing certificates are configured.
+
+### Android (Trusted Web Activity)
+
+`native/android` wraps the same PWA as a Trusted Web Activity. It uses package
+`app.lightsout.puzzle` and host `lights-out-puzzle-game.vercel.app`. The
+Digital Asset Links statement is served from
+`public/.well-known/assetlinks.json`.
+
+```bash
+cd native/android
+./gradlew assembleRelease bundleRelease
+```
+
+CI builds a universal APK, ABI-split APKs, and an AAB. TWA apps contain no native
+code of their own, so the universal APK is the normal install; the ABI variants
+are produced for packaging parity.
+
+The checked-in `native/android/debug.keystore` is a public debug key used only
+when no release secrets are configured. For a Play Store or production release,
+add these repository secrets and update the SHA-256 fingerprint in
+`public/.well-known/assetlinks.json`:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Encode the keystore with `base64 -w0 release.keystore`, then read its fingerprint
+with:
+
+```bash
+keytool -list -v -keystore release.keystore -alias "$ANDROID_KEY_ALIAS" |
+  grep 'SHA256:'
+```
+
+Use the Play App Signing certificate fingerprint, not the upload-key
+fingerprint, once Google Play manages the signing key.
+
+### Build and release flow
+
+Every branch push runs the web checks and builds Electron and TWA artifacts.
+Pushes to `main` also refresh the `edge` prerelease with those artifacts.
+Version tags build the same matrix and publish a versioned GitHub Release with
+`SHA256SUMS`. The arm64 jobs use GitHub-hosted runners that require a public
+repository or an eligible plan.
 
 ## SEO and social previews
 

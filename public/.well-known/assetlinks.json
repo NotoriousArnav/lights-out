@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.lightsout.puzzle",
+      "sha256_cert_fingerprints": [
+        "BD:87:8B:0E:87:DE:53:6A:8A:C0:D6:D5:D6:5E:34:97:5C:88:DA:FB:24:F7:D2:E5:1A:DA:44:36:36:9A:B0:7C"
+      ]
+    }
+  }
+]
